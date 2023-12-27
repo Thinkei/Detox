@@ -55,8 +55,20 @@ public class AnimatedModuleIdlingResource implements DescriptiveIdlingResource, 
 
     private final static String METHOD_HAS_ACTIVE_ANIMATIONS = "hasActiveAnimations";
 
+    // max timeout is 5 seconds
+    private final static long MAX_TIMEOUT = 5000L;
+    // loading max timeout is 15 seconds
+    private final static long MAX_LOADING_TIMEOUT = 15000L;
+    // assume it idle for 1 seconds
+    private final static long IDLE_TIME = 1000L;
+
+    private static boolean isInit = true;
+
+    private static long last_idle_time = System.currentTimeMillis();
+
     private final static Map<String, Object> busyHint = new HashMap<String, Object>() {{
-        put("reason", "Animations running on screen");
+        float busy_time = System.currentTimeMillis() - last_idle_time;
+        put("reason", "Animations running on screen: " + busy_time + " ms");
     }};
 
     private ResourceCallback callback = null;
@@ -85,6 +97,21 @@ public class AnimatedModuleIdlingResource implements DescriptiveIdlingResource, 
 
     @Override
     public boolean isIdleNow() {
+        // if busy for more than max_timeout seconds, we assume it's stuck
+        // the longest animation we have is loading screen, which is only showed at initial
+        final long max_timeout = isInit ? MAX_LOADING_TIMEOUT : MAX_TIMEOUT;
+        if (System.currentTimeMillis() - last_idle_time > max_timeout) {
+            Log.e(LOG_TAG, "AnimatedModule is stuck.");
+            if (callback != null) {
+                callback.onTransitionToIdle();
+            }
+            if (System.currentTimeMillis() - last_idle_time > max_timeout + IDLE_TIME) {
+                isInit = false;
+                last_idle_time = System.currentTimeMillis();
+            }
+            return true;
+        }
+
         Class<?> animModuleClass = null;
         try {
             animModuleClass = Class.forName(CLASS_ANIMATED_MODULE);
@@ -93,6 +120,7 @@ public class AnimatedModuleIdlingResource implements DescriptiveIdlingResource, 
             if (callback != null) {
                 callback.onTransitionToIdle();
             }
+            last_idle_time = System.currentTimeMillis();
             return true;
         }
 
@@ -109,15 +137,18 @@ public class AnimatedModuleIdlingResource implements DescriptiveIdlingResource, 
                 if (callback != null) {
                     callback.onTransitionToIdle();
                 }
+                last_idle_time = System.currentTimeMillis();
                 return true;
             }
 
             if (ReactNativeInfo.rnVersion().getMinor() >= 51) {
                 if(isIdleRN51(animModuleClass)) {
+                    last_idle_time = System.currentTimeMillis();
                     return true;
                 }
             } else {
                 if (isIdleRNOld(animModuleClass)) {
+                    last_idle_time = System.currentTimeMillis();
                     return true;
                 }
             }
@@ -134,6 +165,7 @@ public class AnimatedModuleIdlingResource implements DescriptiveIdlingResource, 
             callback.onTransitionToIdle();
         }
 //        Log.i(LOG_TAG, "AnimatedModule is idle.");
+        last_idle_time = System.currentTimeMillis();
         return true;
     }
 

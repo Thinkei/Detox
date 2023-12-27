@@ -170,7 +170,13 @@ public class DetoxAction {
 
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        return PickerActions.setDate(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+
+        // if formatString contain hh:mm, we need to set time
+        if (formatString.toLowerCase().contains("hh:mm")) {
+            return PickerActions.setTime(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE));
+        } else {
+            return PickerActions.setDate(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+        }
     }
 
     public static ViewAction adjustSliderToPosition(final double newPosition) {

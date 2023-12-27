@@ -8,11 +8,13 @@ detoxVersion=`node -p "require('${detoxRootPath}/package.json').version"`
 
 sha1=`(echo "${detoxVersion}" && xcodebuild -version) | shasum | awk '{print $1}' #"${2}"`
 detoxFrameworkDirPath="$HOME/Library/Detox/ios/${sha1}"
+mkdir -p "${detoxFrameworkDirPath}"
+rm -r "${detoxFrameworkDirPath}"
 detoxFrameworkPath="${detoxFrameworkDirPath}/Detox.framework"
 
 
 function prepareAndBuildFramework () {
-  if [ -d "$detoxRootPath"/ios ]; then
+  if [ -d "$detoxRootPath"/iosz ]; then
     detoxSourcePath="${detoxRootPath}"/ios
     echo "Dev mode, building from ${detoxSourcePath}"
     buildFramework "${detoxSourcePath}"

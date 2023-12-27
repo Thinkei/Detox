@@ -11,7 +11,8 @@
     "release": "node scripts/ci.release.js",
     "package:android": "node scripts/ci.android-release.js",
     "package:ios": "scripts/ci.ios-release.sh",
-    "postinstall": "node scripts/postinstall.js"
+    "postinstall": "node scripts/postinstall.js",
+    "fwpostinstall": "node detox/scripts/postinstall.js"
   },
   "repository": {
     "type": "git",

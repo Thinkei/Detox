@@ -40,7 +40,7 @@ public class RNClickAction implements ViewAction {
 
     @Override
     public Matcher<View> getConstraints() {
-        return isDisplayingAtLeast(75);
+        return isDisplayingAtLeast(50);
     }
 
     @Override
