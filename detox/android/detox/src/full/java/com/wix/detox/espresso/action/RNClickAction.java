@@ -19,6 +19,8 @@ import static androidx.test.espresso.matcher.ViewMatchers.isDisplayingAtLeast;
 
 public class RNClickAction implements ViewAction {
     private final GeneralClickAction clickAction;
+    private final int initPct = 100;
+    private static long first_check_time = System.currentTimeMillis();
 
     public RNClickAction() {
         clickAction = new GeneralClickAction(
@@ -40,7 +42,9 @@ public class RNClickAction implements ViewAction {
 
     @Override
     public Matcher<View> getConstraints() {
-        return isDisplayingAtLeast(50);
+        float checking_time = System.currentTimeMillis() - first_check_time;
+        int pct = initPct - (int)(checking_time * 5);
+        return isDisplayingAtLeast(pct < 50 ? 50 : pct);
     }
 
     @Override

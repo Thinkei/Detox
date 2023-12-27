@@ -90,7 +90,7 @@ public class DetoxMatcher {
     }
 
     public static Matcher<View> matcherForSufficientlyVisible(int pct) {
-        return isDisplayingAtLeast(pct > 50 ? 50 : pct);
+        return isDisplayingAtLeast(pct);
     }
 
     public static Matcher<View> matcherForNotVisible() {
