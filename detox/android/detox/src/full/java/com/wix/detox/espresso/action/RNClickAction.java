@@ -40,7 +40,17 @@ public class RNClickAction implements ViewAction {
 
     @Override
     public Matcher<View> getConstraints() {
-        return isDisplayingAtLeast(75);
+        Matcher<View> matcher = isDisplayingAtLeast(75);
+        // if no view matched, wait a second and try again with a lower threshold
+        if (!matcher.matches(null)) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                System.out.println(e);
+            }
+            return isDisplayingAtLeast(50);
+        }
+        return matcher;
     }
 
     @Override

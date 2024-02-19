@@ -9,12 +9,18 @@ import {
   Platform,
   Dimensions,
   StyleSheet,
-  Slider as LegacySlider,
   SafeAreaView,
   requireNativeComponent,
 } from 'react-native';
 import TextInput from '../Views/TextInput';
 import Slider from '@react-native-community/slider';
+
+let LegacySlider;
+try {
+  LegacySlider = require('react-native').Slider;
+} catch (e) {
+  // Ignore
+}
 
 const DoubleTapsText = requireNativeComponent('DetoxDoubleTapsTextView');
 const SluggishTapsText = requireNativeComponent('DetoxSluggishTapsTextView');
@@ -174,9 +180,12 @@ export default class ActionsScreen extends Component {
           </ScrollView>
         </View>
 
-        <View style={{ height: 40, borderColor: '#c0c0c0', marginHorizontal: 20 }}>
-          <LegacySlider testID='legacySliderWithASimpleID' maximumValue={1000.0} minimumValue={0.0} value={250.0}/>
-        </View>
+        {
+          LegacySlider &&
+          <View style={{ height: 40, borderColor: '#c0c0c0', marginHorizontal: 20 }}>
+            <LegacySlider testID='legacySliderWithASimpleID' maximumValue={1000.0} minimumValue={0.0} value={250.0} />
+          </View>
+        }
 
         <View style={{ height: 40, borderColor: '#c0c0c0', marginHorizontal: 20 }}>
           <Slider testID='sliderWithASimpleID' maximumValue={1000.0} minimumValue={0.0} value={250.0}/>
@@ -301,6 +310,6 @@ export default class ActionsScreen extends Component {
       backPressed: true
     });
     return true;
-  };
+  }
 
 }
