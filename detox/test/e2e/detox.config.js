@@ -10,10 +10,12 @@ const launchArgs = {
 const config = {
   testRunner: {
     args: {
-      $0: 'nyc jest',
+      $0: process.env.CI ? 'nyc jest' : 'jest',
       config: 'e2e/jest.config.js',
-      _: ['e2e/']
+      forceExit: process.env.CI ? true : undefined,
+      _: ['e2e/'],
     },
+    detached: !!process.env.CI,
     retries: process.env.CI ? 1 : undefined,
     jest: {
       setupTimeout: +`${process.env.DETOX_JEST_SETUP_TIMEOUT || 300000}`,
@@ -97,7 +99,8 @@ const config = {
       type: 'ios.simulator',
       headless: Boolean(process.env.CI),
       device: {
-        type: 'iPhone 12 Pro Max',
+        type: 'iPhone 15 Pro Max',
+        os: "17.2",
       },
     },
 

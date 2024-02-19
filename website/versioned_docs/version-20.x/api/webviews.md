@@ -78,7 +78,7 @@ web.element(by.web.cssSelector('#cssSelector'));
 
 ### `by.web.name(name)`
 
-Match elements with the specified name.
+Match form input elements with the specified [`name` attribute][name].
 
 ```js
 web.element(by.web.name('name'));
@@ -140,7 +140,6 @@ Web view actions are used to interact with elements within a web view:
 - [`focus()`]
 - [`moveCursorToEnd()`]
 - [`runScript()`]
-- [`runScriptWithArgs()`]
 - [`getCurrentUrl()`]
 - [`getTitle()`]
 
@@ -321,21 +320,21 @@ await expect(web.element(by.web.id('identifier'))).not.toHaveText('Hello World!'
 
 [web view expectations]: webviews.md#expectations
 
-[`by.web.id()`]: webviews.md#byidid
+[`by.web.id()`]: webviews.md#bywebidid
 
-[`by.web.className()`]: webviews.md#byclassnameclassname
+[`by.web.className()`]: webviews.md#bywebclassnameclassname
 
-[`by.web.cssSelector()`]: webviews.md#bycssselectorcssselector
+[`by.web.cssSelector()`]: webviews.md#bywebcssselectorcssselector
 
-[`by.web.name()`]: webviews.md#byname
+[`by.web.name()`]: webviews.md#bywebnamename
 
-[`by.web.xpath()`]: webviews.md#byxpathxpath
+[`by.web.xpath()`]: webviews.md#bywebxpathxpath
 
-[`by.web.href()`]: webviews.md#byhrefhref
+[`by.web.href()`]: webviews.md#bywebhrefhref
 
-[`by.web.hrefContains()`]: webviews.md#byhrefcontainshref
+[`by.web.hrefContains()`]: webviews.md#bywebhrefcontainshref
 
-[`by.web.tag()`]: webviews.md#bytagtag
+[`by.web.tag()`]: webviews.md#bywebtagtag
 
 [`atIndex()`]: webviews.md#atindexindex
 
@@ -359,9 +358,9 @@ await expect(web.element(by.web.id('identifier'))).not.toHaveText('Hello World!'
 
 [`moveCursorToEnd()`]: webviews.md#movecursortoend
 
-[`runScript()`]: webviews.md#runscriptscript
+[name]: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/Input#name
 
-[`runScriptWithArgs()`]: webviews.md#runscriptwithargsscript-args
+[`runScript()`]: webviews.md#runscriptscript-args
 
 [`getCurrentUrl()`]: webviews.md#getcurrenturl
 
