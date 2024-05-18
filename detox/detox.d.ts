@@ -1137,7 +1137,21 @@ declare global {
         }
 
         interface WebViewElement {
+            /**
+             * Find a web element by a matcher.
+             * @param webMatcher a web matcher for the web element.
+             */
             element(webMatcher: WebMatcher): IndexableWebElement;
+
+            /**
+             * Returns the index-th web-view in the UI hierarchy that is matched by the given matcher.
+             * @param index the index of the web-view.
+             *
+             * @note Currently, supported only for iOS.
+             *
+             * @example await web(by.id('webview')).atIndex(1);
+             */
+            atIndex(index: number): WebViewElement;
         }
 
         interface WebFacade extends WebViewElement {
@@ -1265,15 +1279,34 @@ declare global {
              * Performs the action repeatedly on the element until an expectation is met
              * @example await waitFor(element(by.text('Item #5'))).toBeVisible().whileElement(by.id('itemsList')).scroll(50, 'down');
              */
-            whileElement(by: NativeMatcher): NativeElement & WaitFor;
+            whileElement(by: NativeMatcher): NativeElementWaitableActions & WaitFor;
 
             // TODO: not sure about & WaitFor - check if we can chain whileElement multiple times
         }
 
-        interface NativeElementActions {
+        interface NativeElementWaitableActions {
+
+          /**
+           * Scrolls a given amount of pixels in the provided direction, starting from the provided start positions.
+           * @param pixels - independent device pixels
+           * @param direction - left/right/up/down
+           * @param startPositionX - the X starting scroll position, in percentage; valid input: `[0.0, 1.0]`, `NaN`; default: `NaN`—choose the best value automatically
+           * @param startPositionY - the Y starting scroll position, in percentage; valid input: `[0.0, 1.0]`, `NaN`; default: `NaN`—choose the best value automatically
+           * @example await element(by.id('scrollView')).scroll(100, 'down', NaN, 0.85);
+           * @example await element(by.id('scrollView')).scroll(100, 'up');
+           */
+          scroll(
+            pixels: number,
+            direction: Direction,
+            startPositionX?: number,
+            startPositionY?: number
+          ): Promise<void>;
+        }
+
+        interface NativeElementActions extends NativeElementWaitableActions{
             /**
              * Simulate tap on an element
-             * @param point relative coordinates to the matched element (the element size could changes on different devices or even when changing the device font size)
+             * @param point coordinates in the element's coordinate space. Optional (default is the center of the element).
              * @example await element(by.id('tappable')).tap();
              * @example await element(by.id('tappable')).tap({ x:5, y:10 });
              */
@@ -1281,10 +1314,19 @@ declare global {
 
             /**
              * Simulate long press on an element
-             * @param duration (iOS only) custom press duration time, in milliseconds. Optional (default is 1000ms).
+             * @param point coordinates in the element's coordinate space. Optional (default is the center of the element).
+             * @param duration custom press duration time, in milliseconds. Optional (defaults to the standard long-press duration for the platform).
+             *      Custom durations should be used cautiously, as they can affect test consistency and user experience expectations.
+             *      They are typically necessary when testing components that behave differently from the platform's defaults or when simulating unique user interactions.
              * @example await element(by.id('tappable')).longPress();
+             * @example await element(by.id('tappable')).longPress(2000);
+             * @example await element(by.id('tappable')).longPress({ x:5, y:10 });
+             * @example await element(by.id('tappable')).longPress({ x:5, y:10 }, 1500);
              */
-            longPress(duration?: number): Promise<void>;
+            longPress(): Promise<void>;
+            longPress(point: Point2D): Promise<void>;
+            longPress(duration: number): Promise<void>;
+            longPress(point: Point2D, duration: number): Promise<void>;
 
             /**
              * Simulate long press on an element and then drag it to the position of the target element. (iOS Only)
@@ -1302,7 +1344,7 @@ declare global {
 
             /**
              * Simulate tap at a specific point on an element.
-             * Note: The point coordinates are relative to the matched element and the element size could changes on different devices or even when changing the device font size.
+             * Note: The point coordinates are relative to the matched element and the element size could change on different devices or even when changing the device font size.
              * @example await element(by.id('tappable')).tapAtPoint({ x:5, y:10 });
              * @deprecated Use `.tap()` instead.
              */
@@ -1337,22 +1379,6 @@ declare global {
              * @example await element(by.id('textField')).tapReturnKey();
              */
             tapReturnKey(): Promise<void>;
-
-            /**
-             * Scrolls a given amount of pixels in the provided direction, starting from the provided start positions.
-             * @param pixels - independent device pixels
-             * @param direction - left/right/up/down
-             * @param startPositionX - the X starting scroll position, in percentage; valid input: `[0.0, 1.0]`, `NaN`; default: `NaN`—choose the best value automatically
-             * @param startPositionY - the Y starting scroll position, in percentage; valid input: `[0.0, 1.0]`, `NaN`; default: `NaN`—choose the best value automatically
-             * @example await element(by.id('scrollView')).scroll(100, 'down', NaN, 0.85);
-             * @example await element(by.id('scrollView')).scroll(100, 'up');
-             */
-            scroll(
-                pixels: number,
-                direction: Direction,
-                startPositionX?: number,
-                startPositionY?: number
-            ): Promise<void>;
 
             /**
              * Scroll to index.
@@ -1507,8 +1533,8 @@ declare global {
 
         interface IndexableWebElement extends WebElement {
             /**
-             * Choose from multiple elements matching the same matcher using index
-             * @example await web.element(by.web.hrefContains('Details')).atIndex(2).tap();
+             * Choose from multiple elements matching the same matcher using index.
+             * @example await web.element(by.web.tag('p')).atIndex(2).tap();
              */
             atIndex(index: number): WebElement;
         }
@@ -1520,24 +1546,27 @@ declare global {
             tap(): Promise<void>;
 
             /**
+             * Type text into a web element.
              * @param text to type
-             * @param isContentEditable whether its a ContentEditable element, default is false.
+             * @param isContentEditable whether the element is content-editable, default is false. Ignored on iOS.
              */
             typeText(text: string, isContentEditable: boolean): Promise<void>;
 
             /**
-             * At the moment not working on content-editable
+             * Replaces the input content with the new text.
+             * @note On Android, not working for content-editable elements.
              * @param text to replace with the old content.
              */
             replaceText(text: string): Promise<void>;
 
             /**
-             * At the moment not working on content-editable
+             * Clears the input content.
+             * @note On Android, not working for content-editable elements.
              */
             clearText(): Promise<void>;
 
             /**
-             * scrolling to the view, the element top position will be at the top of the screen.
+             * Scrolling to the view, the element top position will be at the top of the screen.
              */
             scrollToView(): Promise<void>;
 
@@ -1552,12 +1581,14 @@ declare global {
             focus(): Promise<void>;
 
             /**
-             * Selects all the input content, works on ContentEditable at the moment.
+             * Selects all the input content.
+             * @note On Android, it works only for content-editable elements.
              */
             selectAllText(): Promise<void>;
 
             /**
-             * Moves the input cursor / caret to the end of the content, works on ContentEditable at the moment.
+             * Moves the input cursor to the end of the content.
+             * @note On Android, it works only for content-editable elements.
              */
             moveCursorToEnd(): Promise<void>;
 
@@ -1721,9 +1752,11 @@ declare global {
             value?: unknown;
         }
 
-        interface IosElementAttributeFrame {
-            y: number;
+        interface IosElementAttributeFrame extends ElementAttributeFrame { }
+
+        interface ElementAttributeFrame {
             x: number;
+            y: number;
             width: number;
             height: number;
         }
@@ -1802,10 +1835,12 @@ declare global {
              */
             visibility: 'visible' | 'invisible' | 'gone';
             /**
+             * @deprecated
              * Width of the element, in pixels.
              */
             width: number;
             /**
+             * @deprecated
              * Height of the element, in pixels.
              */
             height: number;
@@ -1821,6 +1856,10 @@ declare global {
              * Whether the element is the one currently in focus.
              */
             focused: boolean;
+            /**
+             * The frame of the element, in screen coordinate space.
+             */
+            frame: ElementAttributeFrame;
             /**
              * The text size for the text element.
              */

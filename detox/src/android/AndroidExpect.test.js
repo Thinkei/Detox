@@ -213,6 +213,9 @@ describe('AndroidExpect', () => {
         await e.element(e.by.label('Tap Me')).tap({ x: 10, y: 10 });
         await e.element(e.by.label('Tap Me')).tapAtPoint({ x: 100, y: 200 });
         await e.element(e.by.label('Tap Me')).longPress();
+        await e.element(e.by.label('Tap Me')).longPress(1000);
+        await e.element(e.by.label('Tap Me')).longPress({ x: 10, y: 10 }, 1000);
+        await e.element(e.by.label('Tap Me')).longPress({ x: 10, y: 10 });
         await e.element(e.by.id('UniqueId819')).multiTap(3);
       });
 
@@ -220,6 +223,11 @@ describe('AndroidExpect', () => {
         await [null, undefined, 0, -1, 'NaN'].forEach(item => {
           jestExpect(() => e.element(e.by.id('UniqueId819')).multiTap(item)).rejects.toThrow();
         });
+
+        await jestExpect(() => e.element(e.by.label('Tap Me')).longPress('NaN')).rejects.toThrow();
+        await jestExpect(() => e.element(e.by.label('Tap Me')).longPress('NaN', 1000)).rejects.toThrow();
+        await jestExpect(() => e.element(e.by.label('Tap Me')).longPress({ x: 'NaN', y: 10 }, 1000)).rejects.toThrow();
+        await jestExpect(() => e.element(e.by.label('Tap Me')).longPress({ x: 10, y: 'NaN' }, 1000)).rejects.toThrow();
       });
 
       it('should press special keys', async () => {
@@ -282,6 +290,11 @@ describe('AndroidExpect', () => {
         await e.element(e.by.id('ScrollView799')).swipe('right', 'slow', 0.9);
         await e.element(e.by.id('ScrollView799')).swipe('down', 'fast', undefined, undefined, 0.25);
         await e.element(e.by.id('ScrollView799')).swipe('up', 'slow', 0.9, 0.5, 0.5);
+      });
+
+      it('should long press and drag', async () => {
+        await e.element(e.by.id('draggable')).longPressAndDrag(1000, 0.5, 0.5, e.element(e.by.id('DragAndDropTarget')), 0.5, 0.5, 'fast', 0);
+        await e.element(e.by.id('draggable')).longPressAndDrag(1000, 0.5, 0.5, e.element(e.by.id('DragAndDropTarget')), 0.5, 0.5, 'slow', 0);
       });
 
       it('should not swipe given bad args', async () => {
@@ -378,7 +391,6 @@ describe('AndroidExpect', () => {
     });
 
     describe('web', () => {
-
       it('default', async () => {
         await e.web.element(e.by.web.id('id')).tap();
       });
@@ -400,6 +412,10 @@ describe('AndroidExpect', () => {
         jestExpect(() => e.web(e.by.web.hrefContains('webMatcher'))).toThrow();
         jestExpect(() => e.web(e.by.web.tag('webMatcher'))).toThrow();
         jestExpect(() => e.web(e.by.web.xpath('webMatcher'))).toThrow();
+      });
+
+      it('with at-index should throw', async () => {
+        jestExpect(() => e.web(e.by.id('webview_id')).atIndex(1).element(e.by.web.id('id')).tap()).toThrow();
       });
 
       it(`inner element with wrong matcher should throw`, async () => {

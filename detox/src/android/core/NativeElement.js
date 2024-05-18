@@ -7,6 +7,7 @@ const DetoxRuntimeError = require('../../errors/DetoxRuntimeError');
 const invoke = require('../../invoke');
 const { removeMilliseconds } = require('../../utils/dateUtils');
 const { actionDescription } = require('../../utils/invocationTraceDescriptions');
+const mapLongPressArguments = require('../../utils/mapLongPressArguments');
 const actions = require('../actions/native');
 const DetoxMatcherApi = require('../espressoapi/DetoxMatcher');
 const { ActionInteraction } = require('../interactions/native');
@@ -42,9 +43,33 @@ class NativeElement {
     return await new ActionInteraction(this._invocationManager, this._matcher, action, traceDescription).execute();
   }
 
-  async longPress() {
-    const action = new actions.LongPressAction();
-    const traceDescription = actionDescription.longPress();
+  async longPress(optionalPointOrDuration, optionalDuration) {
+    const { point, duration } = mapLongPressArguments(optionalPointOrDuration, optionalDuration);
+
+    const action = new actions.LongPressAction(point, duration);
+    const traceDescription = actionDescription.longPress(point, duration);
+    return await new ActionInteraction(this._invocationManager, this._matcher, action, traceDescription).execute();
+  }
+
+  async longPressAndDrag(duration, normalizedPositionX, normalizedPositionY, targetElement, normalizedTargetPositionX, normalizedTargetPositionY, speed, holdDuration) {
+    const action = new actions.LongPressAndDragAction(
+      duration,
+      normalizedPositionX,
+      normalizedPositionY,
+      targetElement,
+      normalizedTargetPositionX,
+      normalizedTargetPositionY,
+      speed,
+      holdDuration);
+    const traceDescription = actionDescription.longPressAndDrag(
+      duration,
+      normalizedPositionX,
+      normalizedPositionY,
+      targetElement,
+      normalizedTargetPositionX,
+      normalizedTargetPositionY,
+      speed,
+      holdDuration);
     return await new ActionInteraction(this._invocationManager, this._matcher, action, traceDescription).execute();
   }
 

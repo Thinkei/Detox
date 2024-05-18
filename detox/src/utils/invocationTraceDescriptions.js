@@ -3,7 +3,7 @@ module.exports = {
     adjustSliderToPosition: (newPosition) => `adjust slider to position ${newPosition}`,
     clearText: () => 'clear input text',
     getAttributes: () => 'get element attributes',
-    longPress: (duration) => `long press${duration !== undefined ? ` for ${duration}ms` : ''}`,
+    longPress: (point, duration) => `long press${duration !== null ? ` for ${duration}ms` : ''}${point !== null ? ` at ${JSON.stringify(point)}` : ''}`,
     longPressAndDrag: (duration, startX, startY, targetElement, endX, endY, speed, holdDuration) =>
       `long press and drag from ${startX}, ${startY} to ${endX}, ${endY} with speed ${speed} and hold duration ${holdDuration}`,
     multiTap: (times) => `tap ${times} times`,
@@ -26,6 +26,22 @@ module.exports = {
     tapBackspaceKey: () => 'tap on backspace key',
     tapReturnKey: () => 'tap on return key',
     typeText: (value) => `type input text: "${value}"`,
+  },
+  webViewActionDescription: {
+    tap: () => `tap`,
+    typeText: (value, isContentEditable) => `type input text: "${value}"${isContentEditable ? ' in content editable' : ''}`,
+    replaceText: (value) => `replace input text: "${value}"`,
+    clearText: () => 'clear input text',
+    selectAllText: () => 'select all input text',
+    getText: () => 'get input text',
+    scrollToView: () => 'scroll to view',
+    focus: () => 'focus',
+    moveCursorToEnd: () => 'move cursor to end',
+    runScript: (script) => `run script: "${script}"`,
+    runScriptWithArgs: (script, ...args) => `run script: "${script}" with args: "${args}"`,
+    getCurrentUrl: () => 'get current url',
+    getTitle: () => 'get title',
+    full: (actionDescription) => `perform web view action: ${actionDescription}`
   },
   expectDescription: {
     waitFor: (actionDescription) => `wait for expectation while ${actionDescription}`,
