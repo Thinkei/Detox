@@ -10,6 +10,17 @@ jest.mock('./invoke');
 jest.mock('./utils/wrapWithStackTraceCutter');
 jest.mock('./environmentFactory');
 
+let mockIsInitialized = false;
+jest.mock('detox-copilot', () => ({
+  default: {
+    init: jest.fn(),
+    isInitialized: jest.fn(() => mockIsInitialized),
+    start: jest.fn(),
+    end: jest.fn(),
+    perform: jest.fn(),
+  },
+}));
+
 describe('DetoxWorker', () => {
   const fakeCookie = {
     chocolate: 'yum',
@@ -40,6 +51,7 @@ describe('DetoxWorker', () => {
   let runtimeDevice;
   let Detox;
   let detox;
+  let copilot;
 
   beforeEach(() => {
     mockEnvironmentFactories();
@@ -55,6 +67,8 @@ describe('DetoxWorker', () => {
   });
 
   beforeEach(async () => {
+    mockIsInitialized = false;
+
     detoxConfig = await configuration.composeDetoxConfig({
       override: {
         configurations: {
@@ -85,6 +99,8 @@ describe('DetoxWorker', () => {
       [symbols.allocateDevice]: jest.fn().mockResolvedValue(fakeCookie),
       [symbols.deallocateDevice]: jest.fn(),
     };
+
+    copilot = require('detox-copilot').default;
   });
 
   describe('when DetoxWorker#init() is called', () => {
@@ -133,7 +149,9 @@ describe('DetoxWorker', () => {
         expect(envValidator.validate).toHaveBeenCalled());
 
       it('should allocate a device', () => {
-        expect(detoxContext[symbols.allocateDevice]).toHaveBeenCalledWith();
+        expect(detoxContext[symbols.allocateDevice]).toHaveBeenCalledWith(expect.objectContaining({
+          type: 'fake.device',
+        }));
       });
 
       it('should create a runtime-device based on the allocation result (cookie)', () =>
@@ -288,6 +306,26 @@ describe('DetoxWorker', () => {
         await expect(init).rejects.toThrowError('Mock validation failure');
       });
     });
+
+    describe('copilot initialization', () => {
+      let DetoxCopilot;
+
+      beforeEach(async () => {
+        DetoxCopilot = require('./copilot/DetoxCopilot');
+
+        await init();
+      });
+
+
+      it('should assign the DetoxCopilot instance to the copilot property', () => {
+        expect(detox.copilot).toBeDefined();
+        expect(detox.copilot).toBeInstanceOf(DetoxCopilot);
+      });
+
+      it('should not initialize the copilot', () => {
+        expect(copilot.init).not.toHaveBeenCalled();
+      });
+    });
   });
 
   describe('when DetoxWorker#@onTestStart() is called', () => {
@@ -295,24 +333,19 @@ describe('DetoxWorker', () => {
       detox = await new Detox(detoxContext).init();
     });
 
-    it('should validate test summary object', async () => {
-      await expect(detox.onTestStart('Test')).rejects.toThrowError(
-        /Invalid test summary was passed/
-      );
-    });
+    describe('with an invalid test summary', () => {
+      it('should validate test summary object', async () => {
+        await expect(detox.onTestStart('Test')).rejects.toThrowError(
+          /Invalid test summary was passed/
+        );
+      });
 
-    it('should validate test summary status', async () => {
-      await expect(detox.onTestStart({
-        ...testSummaries.running(),
-        status: undefined,
-      })).rejects.toThrowError(/Invalid test summary status/);
-    });
-
-    it('should validate test summary status', async () => {
-      await expect(detox.onTestStart({
-        ...testSummaries.running(),
-        status: undefined,
-      })).rejects.toThrowError(/Invalid test summary status/);
+      it('should validate test summary status', async () => {
+        await expect(detox.onTestStart({
+          ...testSummaries.running(),
+          status: undefined,
+        })).rejects.toThrowError(/Invalid test summary status/);
+      });
     });
 
     describe('with a valid test summary', () => {
@@ -321,15 +354,32 @@ describe('DetoxWorker', () => {
       it('should notify artifacts manager about "testStart', () =>
         expect(artifactsManager.onTestStart).toHaveBeenCalledWith(testSummaries.running()));
 
+      it('should not start copilot if copilot init was not called', async () => {
+        try {
+          await detox.onTestStart('Test');
+        } catch {}
+
+        expect(copilot.start).not.toHaveBeenCalled();
+      });
+
+      it('should start copilot if copilot init was called', async () => {
+        mockIsInitialized = true;
+
+        try {
+          await detox.onTestStart('Test');
+        } catch {}
+
+        expect(copilot.start).toHaveBeenCalled();
+      });
+
       it('should not relaunch app', async () => {
-        await detox.onTestStart(testSummaries.running());
         expect(runtimeDevice.launchApp).not.toHaveBeenCalled();
       });
 
       it('should not dump pending network requests', async () => {
-        await detox.onTestStart(testSummaries.running());
         expect(client().dumpPendingRequests).not.toHaveBeenCalled();
       });
+
     });
   });
 
@@ -350,6 +400,10 @@ describe('DetoxWorker', () => {
 
       it('should notify artifacts manager about "testDone"', () =>
         expect(artifactsManager.onTestDone).toHaveBeenCalledWith(testSummaries.passed()));
+
+      it('should not end copilot if copilot init was not called', async () => {
+        expect(copilot.end).not.toHaveBeenCalled();
+      });
     });
 
     describe('with a failed test summary (due to failed asseration)', () => {
@@ -364,6 +418,22 @@ describe('DetoxWorker', () => {
 
       it('should dump pending network requests', () =>
         expect(client().dumpPendingRequests).toHaveBeenCalled());
+    });
+
+    it('should end copilot with cache enabled if test has passed', async () => {
+      mockIsInitialized = true;
+
+      await detox.onTestDone(testSummaries.passed());
+
+      expect(copilot.end).toHaveBeenCalledWith(false);
+    });
+
+    it('should end copilot without cache if test has failed', async () => {
+      mockIsInitialized = true;
+
+      await detox.onTestDone(testSummaries.failed());
+
+      expect(copilot.end).toHaveBeenCalledWith(true);
     });
   });
 

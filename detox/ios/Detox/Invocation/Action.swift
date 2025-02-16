@@ -129,6 +129,15 @@ class Action : CustomStringConvertible {
 		}
 	}
 	
+	func startPosition(forIndex index: Int, in params: [Any]?) -> Double {
+		guard params?.count ?? 0 > index,
+			  let param = params?[index] as? Double,
+			  param.isNaN == false else {
+			return Double.nan
+		}
+		return param
+	}
+	
 	var description: String {
 		let paramsDescription: String
 		if let params = params {
@@ -188,61 +197,86 @@ class LongPressAction : Action {
 	}
 	
 	override func perform(on element: Element) -> [String: Any]? {
-		let duration : TimeInterval
-		if let param = params?.first as? Double {
-			duration = param.toSeconds()
+		if targetElement != nil {
+			return performLongPressAndDrag(on: element)
 		} else {
-			duration = 1.0
+			return performLongPress(on: element)
 		}
-		
-		guard let parameters = params, parameters.count > 1 else {
-			// Regular long press
-			element.longPress(duration: duration)
-			return nil
-		}
-		
-		guard let targetElement = self.targetElement else {
-			fatalError("Target element is missing")
-		}
-		
-		guard parameters.count > 2 else {
-			fatalError("Unknown normalized starting point")
-		}
-		
-		let normalizedStartingPoint = getNormalizedPoint(xPosition: parameters[1], yPosition: parameters[2])
-		
-		guard parameters.count > 4 else {
-			fatalError("Unknown normalized target point")
-		}
-		
-		let normalizedTargetingPoint = getNormalizedPoint(xPosition: parameters[3], yPosition: parameters[4])
-		
-		var speed = CGFloat(0.5)
-		if let speedString = parameters[5] as? String {
-			switch speedString {
-			case "slow":
-				speed = 0.1
-				break;
-			case "fast":
-				speed = 0.5
-				break
-			default:
-				fatalError("Unknown speed")
+	}
+
+	private func performLongPress(on element: Element) -> [String: Any]? {
+		var duration: TimeInterval = 1.0
+		var point: CGPoint?
+
+		if let params {
+			for param in params {
+				if let number = param as? Double {
+					duration = number.toSeconds()
+				} else if let pointDict = param as? [String: CGFloat], let x = pointDict["x"], let y = pointDict["y"] {
+					point = CGPoint(x: x, y: y)
+				}
 			}
 		}
-		
+
+		element.longPress(at: point, duration: duration)
+		return nil
+	}
+
+	private func performLongPressAndDrag(on element: Element) -> [String: Any]? {
+		guard let targetElement, let params else {
+			fatalError("Invalid params")
+		}
+
+		guard params.count > 0, let duration = (params[0] as? Double)?.toSeconds() else {
+			fatalError("Unknown duration")
+		}
+
+		guard params.count > 2 else {
+			fatalError("Unknown normalized starting point")
+		}
+
+		let normalizedStartingPoint = getNormalizedPoint(xPosition: params[1], yPosition: params[2])
+
+		guard params.count > 4 else {
+			fatalError("Unknown normalized target point")
+		}
+
+		let normalizedTargetingPoint = getNormalizedPoint(xPosition: params[3], yPosition: params[4])
+
+		var speed = CGFloat(0.5)
+		if let speedString = params[5] as? String {
+			switch speedString {
+				case "slow":
+					speed = 0.1
+					break;
+				case "fast":
+					speed = 0.5
+					break
+				default:
+					fatalError("Unknown speed")
+			}
+		}
+
 		let endDuration : TimeInterval
-		if let param = parameters[6] as? Double {
+
+		if let param = params[6] as? Double {
 			endDuration = param.toSeconds()
 		} else {
 			endDuration = 1.0
 		}
-		
-		element.longPress(at: normalizedStartingPoint, duration: duration, dragToElement: targetElement, normalizedTargetPoint: normalizedTargetingPoint, velocity: speed, holdForDuration: endDuration)
-		
+
+		element.longPress(
+			at: normalizedStartingPoint,
+			duration: duration,
+			dragToElement: targetElement,
+			normalizedTargetPoint: normalizedTargetingPoint,
+			velocity: speed,
+			holdForDuration: endDuration
+		)
+
 		return nil
 	}
-	
+
 	func getNormalizedPoint(xPosition: Any, yPosition: Any) -> CGPoint {
 		let xPos, yPos: Double
 		
@@ -434,9 +468,13 @@ class ScrollToEdgeAction : Action {
 			fatalError("Unknown scroll direction")
 			break;
 		}
-		
-		element.scroll(to: targetEdge)
-		
+
+		let startPositionX = startPosition(forIndex: 1, in: params)
+		let startPositionY = startPosition(forIndex: 2, in: params)
+		let normalizedStartingPoint = CGPoint(x: startPositionX, y: startPositionY)
+
+		element.scroll(to: targetEdge, normalizedStartingPoint: normalizedStartingPoint)
+
 		return nil
 	}
 }
@@ -487,18 +525,9 @@ class SwipeAction : Action {
 		targetNormalizedOffset.x *= CGFloat(appliedPercentage)
 		targetNormalizedOffset.y *= CGFloat(appliedPercentage)
 		
-		let startPositionX : Double
-		if params?.count ?? 0 > 3, let param2 = params?[3] as? Double, param2.isNaN == false {
-			startPositionX = param2
-		} else {
-			startPositionX = Double.nan
-		}
-		let startPositionY : Double
-		if params?.count ?? 0 > 4, let param3 = params?[4] as? Double, param3.isNaN == false {
-			startPositionY = param3
-		} else {
-			startPositionY = Double.nan
-		}
+		
+		let startPositionX = startPosition(forIndex: 3, in: params)
+		let startPositionY = startPosition(forIndex: 4, in: params)
 		let normalizedStartingPoint = CGPoint(x: startPositionX, y: startPositionY)
 		
 		element.swipe(normalizedOffset: targetNormalizedOffset, velocity: velocity, normalizedStartingPoint: normalizedStartingPoint)

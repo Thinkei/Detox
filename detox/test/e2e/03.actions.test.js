@@ -1,6 +1,11 @@
+const { isRNNewArch } = require('../../src/utils/rn-consts/rn-consts');
 const driver = require('./drivers/actions-driver').actionsScreenDriver;
 
 describe('Actions', () => {
+  beforeAll(async () => {
+    await device.launchApp();
+  });
+
   beforeEach(async () => {
     await device.reloadReactNative();
     await element(by.text('Actions')).tap();
@@ -19,6 +24,16 @@ describe('Actions', () => {
   it('should long press with duration on an element', async () => {
     await element(by.text('Long Press Me 1.5s')).longPress(1500);
     await expect(element(by.text('Long Press With Duration Working!!!'))).toBeVisible();
+  });
+
+  it('should long press with point', async () => {
+    await element(by.text('Long Press on Top Left')).longPress({ x: 5, y: 5 });
+    await expect(element(by.text('Long Press on Top Left Working!!!'))).toBeVisible();
+  });
+
+  it('should not succeed in long pressing with point outside the target area', async () => {
+    await element(by.text('Long Press on Top Left')).longPress({ x: 15, y: 15 });
+    await expect(element(by.text('Long Press on Top Left Working!!!'))).not.toBeVisible();
   });
 
   it(':android: should tap on an element at point', async () => {
@@ -193,10 +208,10 @@ describe('Actions', () => {
   it('should swipe horizontally by offset from specified positions ', async () => {
     await element(by.id('toggleScrollOverlays')).tap();
 
-    await element(by.id('ScrollViewH')).swipe('left', 'slow', 0.25, 0.85, 0.75);
+    await element(by.id('ScrollViewH')).swipe('left', 'slow', 0.28, 0.85, 0.75);
     await expect(element(by.text('HText1'))).not.toBeVisible(1);
 
-    await element(by.id('ScrollViewH')).swipe('right', 'fast', 0.25, 0.15, 0.25);
+    await element(by.id('ScrollViewH')).swipe('right', 'fast', 0.28, 0.15, 0.25);
     await expect(element(by.text('HText1'))).toBeVisible(1);
   });
 
@@ -212,19 +227,6 @@ describe('Actions', () => {
     await expect(element(by.id('UniqueId007'))).toBeVisible();
   });
 
-  it('should adjust legacy slider and assert its value', async () => {
-    const reactSliderId = 'legacySliderWithASimpleID';
-    await expect(element(by.id(reactSliderId))).toHaveSliderPosition(0.25);
-    await element(by.id(reactSliderId)).adjustSliderToPosition(0.75);
-    await expect(element(by.id(reactSliderId))).not.toHaveSliderPosition(0.74);
-    await expect(element(by.id(reactSliderId))).toHaveSliderPosition(0.74, 0.1);
-
-    // on ios the accessibilityLabel is set to the slider value, but not on android
-    if (device.getPlatform() === 'ios') {
-      await expect(element(by.id(reactSliderId))).toHaveValue('75%');
-    }
-  });
-
   it('should adjust slider and assert its value', async () => {
     const reactSliderId = 'sliderWithASimpleID';
     await expect(element(by.id(reactSliderId))).toHaveSliderPosition(0.25);
@@ -232,8 +234,8 @@ describe('Actions', () => {
     await expect(element(by.id(reactSliderId))).not.toHaveSliderPosition(0.74);
     await expect(element(by.id(reactSliderId))).toHaveSliderPosition(0.74, 0.1);
 
-    // on ios the accessibilityLabel is set to the slider value, but not on android
-    if (device.getPlatform() === 'ios') {
+    // On iOS + legacy arch the accessibilityValue is set to the slider value, but not on android
+    if (device.getPlatform() === 'ios' && !isRNNewArch) {
       await expect(element(by.id(reactSliderId))).toHaveValue('75%');
     }
   });

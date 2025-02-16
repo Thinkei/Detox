@@ -8,8 +8,8 @@ Use [expectations](expect.md) to verify element states.
 
 - [`.tap()`](#tappoint)
 - [`.multiTap()`](#multitaptimes)
-- [`.longPress()`](#longpressduration)
-- [`.longPressAndDrag()`](#longpressanddragduration-normalizedpositionx-normalizedpositiony-targetelement-normalizedtargetpositionx-normalizedtargetpositiony-speed-holdduration--ios-only) **iOS only**
+- [`.longPress()`](#longpresspoint-duration)
+- [`.longPressAndDrag()`](#longpressanddragduration-normalizedpositionx-normalizedpositiony-targetelement-normalizedtargetpositionx-normalizedtargetpositiony-speed-holdduration)
 - [`.swipe()`](#swipedirection-speed-normalizedoffset-normalizedstartingpointx-normalizedstartingpointy)
 - [`.pinch()`](#pinchscale-speed-angle--ios-only) **iOS only**
 - [`.scrollToIndex()`](#scrolltoindexindex--android-only) **Android only**
@@ -51,18 +51,28 @@ Simulates multiple taps on the element at its activation point. All taps are app
 await element(by.id('tappable')).multiTap(3);
 ```
 
-### `longPress(duration)`
+### `longPress(point, duration)`
 
-Simulates a long press on the element at its activation point.
+Simulates a long press on the element at its activation point or at the specified point.
 
-`duration` (iOS only) — press during time, in milliseconds. Optional (default is 1000 ms).
+`point` — a point in the element’s coordinate space (optional, object with `x` and `y` numerical values, default is `null`).
+`duration` — press during time, in milliseconds. Optional (defaults to the standard long-press duration for the platform).
 
 ```js
 await element(by.id('tappable')).longPress();
+await element(by.id('tappable')).longPress({x:5, y:10});
 await element(by.id('tappable')).longPress(1500);
+await element(by.id('tappable')).longPress({x:5, y:10}, 1500);
 ```
 
-### `longPressAndDrag(duration, normalizedPositionX, normalizedPositionY, targetElement, normalizedTargetPositionX, normalizedTargetPositionY, speed, holdDuration)`  iOS only
+:::note Important
+
+Custom durations should be used cautiously, as they can affect test consistency and user experience expectations.
+They are typically necessary when testing components that behave differently from the platform's defaults or when simulating unique user interactions.
+
+:::
+
+### `longPressAndDrag(duration, normalizedPositionX, normalizedPositionY, targetElement, normalizedTargetPositionX, normalizedTargetPositionY, speed, holdDuration)`
 
 Simulates a long press on the element and then drag it to a position of another element.
 
@@ -144,15 +154,17 @@ Continuously scrolls the scroll element until the specified expectation is resol
 await waitFor(element(by.text('Text5'))).toBeVisible().whileElement(by.id('ScrollView630')).scroll(50, 'down');
 ```
 
-### `scrollTo(edge)`
+### `scrollTo(edge[, startPositionX, startPositionY])`
 
 Simulates a scroll to the specified edge.
 
-`edge`—the edge to scroll to (valid input: `"left"`/`"right"`/`"top"`/`"bottom"`)
+`edge`—the edge to scroll to (valid input: `"left"`/`"right"`/`"top"`/`"bottom"`) <br/>
+`startPositionX`—the normalized x percentage of the element to use as scroll start point (optional, valid input: \[0.0, 1.0], `NaN`—choose an optimal value automatically, default is `NaN`) <br/>
+`startPositionY`—the normalized y percentage of the element to use as scroll start point (optional, valid input: \[0.0, 1.0], `NaN`—choose an optimal value automatically, default is `NaN`)
 
 ```js
 await element(by.id('scrollView')).scrollTo('bottom');
-await element(by.id('scrollView')).scrollTo('top');
+await element(by.id('scrollView')).scrollTo('top', NaN, 0.2);
 ```
 
 ### `typeText(text)`
@@ -284,13 +296,13 @@ Retrieved attributes are:
 - `identifier`: The identifier of the element. Matches `accessibilityIdentifier` on iOS, and the main view tag, on Android - both commonly **holding the component’s test ID in React Native apps**.
 - `visible`: Whether the element is visible. On iOS, visibility is calculated for the [activation point](https://developer.apple.com/documentation/objectivec/nsobject/1615179-accessibilityactivationpoint). On Android, the attribute directly holds the value returned by [View.getLocalVisibleRect()](https://developer.android.com/reference/kotlin/android/view/View#getglobalvisiblerect)).
 - `value`: The value of the element, where applicable. For example: the position of a slider, or whether a checkbox has been marked. Matches `accessibilityValue`, on iOS.
+- `frame`: The frame of the element, in screen coordinate space.
 
 #### iOS-Only
 
 - `activationPoint`: The [activation point](https://developer.apple.com/documentation/objectivec/nsobject/1615179-accessibilityactivationpoint) of the element, in element coordinate space.
 - `normalizedActivationPoint`: The activation point of the element, in normalized percentage (\[0.0, 1.0]).
 - `hittable`: Whether the element is hittable at the activation point.
-- `frame`: The frame of the element, in screen coordinate space.
 - `elementFrame`: The frame of the element, in container coordinate space.
 - `elementBounds`: The bounds of the element, in element coordinate space.
 - `safeAreaInsets`: The safe area insets of the element, in element coordinate space.
@@ -304,8 +316,8 @@ Retrieved attributes are:
 #### Android-Only
 
 - `visibility`: The OS visibility type associated with the element: `visible`, `invisible` or `gone`.
-- `width`: Width of the element, in pixels.
-- `height`: Height of the element, in pixels.
+- `width`: Width of the element, in pixels (deprecated).
+- `height`: Height of the element, in pixels (deprecated).
 - `elevation`: Elevation of the element.
 - `alpha`: Alpha value for the element.
 - `focused`: Whether the element is the one currently in focus.
@@ -317,6 +329,10 @@ If the value for a given attribute is null or cannot be otherwise computed, the 
 If the query matches multiple elements, the attributes of all matched elements is returned as an array of objects under the `elements` key.
 
 ```js
+// import jestExpect from 'expect';
+const jestExpect = require('expect').default;
+
+// ...
 const attributes = await element(by.text('Tap Me')).getAttributes();
 jestExpect(attributes.text).toBe('Tap Me');
 
@@ -372,7 +388,7 @@ Simulates a pinch on the element with the provided options.
 await element(by.id('PinchableScrollView')).pinchWithAngle('outward', 'slow', 0);
 ```
 
-[`testID`]: ../guide/test-id.mdx
+[`testID`]: ../guide/test-id.md
 
 [`by.type`]: ../api/matchers.md#bytypeclassname
 

@@ -6,25 +6,26 @@ const environment = require('../../../utils/environment');
 const EnvironmentValidatorBase = require('../EnvironmentValidatorBase');
 
 const MIN_GMSAAS_VERSION = '1.6.0';
+const MIN_GMSAAS_VERSION_WITH_DOCTOR = '1.11.0';
 
 class GenycloudEnvValidator extends EnvironmentValidatorBase {
   /**
    * @param authService { GenyAuthService }
    * @param exec { GenyCloudExec }
    */
-  constructor({ authService, exec }) {
+  constructor({ exec }) {
     super();
-    this._authService = authService;
     this._exec = exec;
   }
 
   async validate() {
-    await this._validateGmsaasVersion();
-    await this._validateGmsaasAuth();
+    const { version } = await this._exec.getVersion();
+
+    await this._validateGmsaasVersion(version);
+    await this._validateGmsaasDoctorCheck(version);
   }
 
-  async _validateGmsaasVersion() {
-    const { version } = await this._exec.getVersion();
+  async _validateGmsaasVersion(version) {
     if (semver.lt(version, MIN_GMSAAS_VERSION)) {
       throw new DetoxRuntimeError({
         message: `Your Genymotion-Cloud executable (found in ${environment.getGmsaasPath()}) is too old! (version ${version})`,
@@ -33,11 +34,16 @@ class GenycloudEnvValidator extends EnvironmentValidatorBase {
     }
   }
 
-  async _validateGmsaasAuth() {
-    if (!await this._authService.getLoginEmail()) {
+  async _validateGmsaasDoctorCheck(version) {
+    if (semver.lt(version, MIN_GMSAAS_VERSION_WITH_DOCTOR)) {
+      return;
+    }
+
+    try {
+      await this._exec.doctor();
+    } catch (e) {
       throw new DetoxRuntimeError({
-        message: `Cannot run tests using 'android.genycloud' type devices, because Genymotion was not logged-in to!`,
-        hint: `Log-in to Genymotion-cloud by running this command (and following instructions):\n${environment.getGmsaasPath()} auth login --help`,
+        message: e.message,
       });
     }
   }

@@ -1,7 +1,9 @@
 const CAF = require('caf');
+const copilot = require('detox-copilot').default;
 const _ = require('lodash');
 
 const Client = require('./client/Client');
+const DetoxCopilot = require('./copilot/DetoxCopilot');
 const environmentFactory = require('./environmentFactory');
 const { DetoxRuntimeErrorComposer } = require('./errors');
 const { InvocationManager } = require('./invoke');
@@ -58,6 +60,10 @@ class DetoxWorker {
     this.by = null;
     /** @type {Detox.WebFacade} */
     this.web = null;
+    /** @type {Detox.SystemFacade} */
+    this.system = null;
+    /** @type {Detox.DetoxCopilotFacade} */
+    this.copilot = new DetoxCopilot();
 
     this._deviceCookie = null;
 
@@ -132,7 +138,7 @@ class DetoxWorker {
     };
 
     this._artifactsManager = artifactsManagerFactory.createArtifactsManager(this._artifactsConfig, commonDeps);
-    this._deviceCookie = yield this._context[symbols.allocateDevice]();
+    this._deviceCookie = yield this._context[symbols.allocateDevice](this._deviceConfig);
 
     this.device = runtimeDeviceFactory.createRuntimeDevice(
       this._deviceCookie,
@@ -157,6 +163,7 @@ class DetoxWorker {
       const injectedGlobals = {
         ...matchers,
         device: this.device,
+        copilot: this.copilot,
         detox: this,
       };
 
@@ -218,7 +225,11 @@ class DetoxWorker {
     yield this._artifactsManager.onRunDescribeStart(...args);
   };
 
-  onTestStart = function* (_signal, testSummary) {
+  onTestStart = function* (_signal, testSummary){
+    if (copilot.isInitialized()) {
+      copilot.start();
+    }
+
     this._validateTestSummary('beforeEach', testSummary);
 
     yield this._dumpUnhandledErrorsIfAny({
@@ -246,6 +257,10 @@ class DetoxWorker {
       pendingRequests: testSummary.timedOut,
       testName: testSummary.fullName,
     });
+
+    if (copilot.isInitialized()) {
+      copilot.end(testSummary.status !== 'passed');
+    }
   };
 
   onRunDescribeFinish = function* (_signal, ...args) {
