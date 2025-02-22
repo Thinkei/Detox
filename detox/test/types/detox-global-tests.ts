@@ -69,6 +69,7 @@ describe("Test", () => {
             element(by.id("element").withDescendant(by.id("child_element")))
         ).toNotExist();
 
+        // eslint-disable-next-line jest/valid-expect
         const expectElement = expect(element(by.id('TextField_Id1')));
 
         await expectElement.toBeVisible();
@@ -90,6 +91,14 @@ describe("Test", () => {
             .toBeVisible()
             .whileElement(by.id("ScrollView630"))
             .scroll(50, "down");
+
+        await waitFor(element(by.text("Text5")))
+          .toBeVisible()
+          .whileElement(by.id("ScrollView630"))
+          .scroll(50, "down", 0.5, 0.5);
+
+        // @ts-expect-error
+        await waitFor(element(by.text("Text5"))).toBeVisible().whileElement(by.id("ScrollView630")).tap();
 
         await web.element(by.web.id("btnSave")).tap();
         await web.element(by.web.id("btnSave")).runScript('(el) => el.click()');
@@ -134,6 +143,10 @@ describe("Test", () => {
             assertType<string | undefined>(commonAttributes.label);
             assertType<string | undefined>(commonAttributes.placeholder);
             assertType<unknown>(commonAttributes.value);
+            assertType<number>(commonAttributes.frame.x);
+            assertType<number>(commonAttributes.frame.y);
+            assertType<number>(commonAttributes.frame.width);
+            assertType<number>(commonAttributes.frame.height);
         });
 
         test('iOS-specific attributes', () => {
@@ -142,10 +155,6 @@ describe("Test", () => {
             assertType<number>(iosAttributes.normalizedActivationPoint.x);
             assertType<number>(iosAttributes.normalizedActivationPoint.y);
             assertType<boolean>(iosAttributes.hittable);
-            assertType<number>(iosAttributes.frame.x);
-            assertType<number>(iosAttributes.frame.y);
-            assertType<number>(iosAttributes.frame.width);
-            assertType<number>(iosAttributes.frame.height);
             assertType<number>(iosAttributes.elementFrame.x);
             assertType<number>(iosAttributes.elementFrame.y);
             assertType<number>(iosAttributes.elementFrame.width);

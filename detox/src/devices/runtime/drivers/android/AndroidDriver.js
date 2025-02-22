@@ -245,6 +245,27 @@ class AndroidDriver extends DeviceDriverBase {
     await this.invocationManager.execute(call);
   }
 
+  async tap(point, shouldIgnoreStatusBar) {
+    let x = point?.x ?? 100;
+    let y = point?.y ?? 100;
+    let _shouldIgnoreStatusBar = shouldIgnoreStatusBar ?? true;
+    const call = EspressoDetoxApi.tap(x, y, _shouldIgnoreStatusBar);
+    await this.invocationManager.execute(call);
+  }
+
+  async longPress(point, duration, shouldIgnoreStatusBar) {
+    let x = point?.x ?? 100;
+    let y = point?.y ?? 100;
+    let _shouldIgnoreStatusBar = shouldIgnoreStatusBar ?? true;
+    const call = duration ? EspressoDetoxApi.longPress(x, y, duration, _shouldIgnoreStatusBar): EspressoDetoxApi.longPress(x, y, _shouldIgnoreStatusBar);
+    await this.invocationManager.execute(call);
+  }
+  
+  async generateViewHierarchyXml(shouldInjectTestIds) {
+    const hierarchy = await this.invocationManager.execute(DetoxApi.generateViewHierarchyXml(shouldInjectTestIds));
+    return hierarchy.result;
+  }
+
   _getAppInstallPaths(_appBinaryPath, _testBinaryPath) {
     const appBinaryPath = getAbsoluteBinaryPath(_appBinaryPath);
     const testBinaryPath = _testBinaryPath ? getAbsoluteBinaryPath(_testBinaryPath) : this._getTestApkPath(appBinaryPath);
@@ -280,7 +301,7 @@ class AndroidDriver extends DeviceDriverBase {
       throw new DetoxRuntimeError({
         message: `The test APK could not be found at path: '${testApkPath}'`,
         hint: 'Try running the detox build command, and make sure it was configured to execute a build command (e.g. \'./gradlew assembleAndroidTest\')' +
-          '\nFor further assistance, visit the Android setup guide: https://github.com/wix/Detox/blob/master/docs/Introduction.Android.md',
+          '\nFor further assistance, visit the project setup guide (select the Android tabs): https://wix.github.io/Detox/docs/introduction/project-setup',
       });
     }
     return testApkPath;

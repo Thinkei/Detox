@@ -129,6 +129,7 @@ export default class StressScreen extends Component {
     });
     for (let i = 0 ; i < EVENT_LOOP_COUNT ; i++) {
       setTimeout(() => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         let str = getStringByLength(EVENT_LOOP_STR_CHUNK_LEN);
       }, 1);
     }
@@ -142,11 +143,9 @@ export default class StressScreen extends Component {
 
   async storageStressButtonPressed() {
     try {
-      await NativeModule.toggleNonStorageSynchronization(false);
       await AsyncStorage.clear();
       await storageHelper.runStressTest();
     } finally {
-      await NativeModule.toggleNonStorageSynchronization(true);
       await AsyncStorage.clear();
     }
 

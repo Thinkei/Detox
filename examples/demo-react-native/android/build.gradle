@@ -1,12 +1,13 @@
 buildscript {
-    def androidGradlePluginVersion = '7.3.1'
+    apply from: '../../../detox/android/rninfo.gradle'
 
     ext {
-        kotlinVersion = '1.8.22'
-        buildToolsVersion = '33.0.0'
-        compileSdkVersion = 33
-        targetSdkVersion = 33
-        minSdkVersion = 21
+        kotlinVersion = '1.9.24'
+        buildToolsVersion = '35.0.0'
+        compileSdkVersion = 35
+        targetSdkVersion = 35
+        ndkVersion = "26.1.10909125"
+        minSdkVersion = 26
     }
 
     repositories {
@@ -15,7 +16,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "com.android.tools.build:gradle:$androidGradlePluginVersion"
+        classpath "com.android.tools.build:gradle"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
         classpath "com.facebook.react:react-native-gradle-plugin"
     }
@@ -30,3 +31,16 @@ allprojects {
         }
     }
 }
+
+subprojects {
+    // Apply common configurations to all sub-projects
+    afterEvaluate { project ->
+        if (project.hasProperty("android")) {
+            project.android {
+                buildToolsVersion = rootProject.ext.buildToolsVersion
+            }
+        }
+    }
+}
+
+apply plugin: "com.facebook.react.rootproject"

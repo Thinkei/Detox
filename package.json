@@ -11,7 +11,8 @@
     "release": "node scripts/ci.release.js",
     "package:android": "node scripts/ci.android-release.js",
     "package:ios": "scripts/ci.ios-release.sh",
-    "postinstall": "node scripts/postinstall.js"
+    "ci:ios": "sh ./scripts/ci.ios.sh",
+    "ci:android": "sh ./scripts/ci.android.sh"
   },
   "repository": {
     "type": "git",
@@ -23,7 +24,7 @@
   "devDependencies": {
     "chalk": "^4.0.0",
     "dictionary-en": "^3.1.0",
-    "lerna": "3.22.1",
+    "lerna": "^6.6.2",
     "lodash": "4.17.x",
     "markdownlint-cli": "^0.29.0",
     "remark": "^14.0.1",
@@ -54,5 +55,5 @@
     "shell-utils": "1.x.x",
     "unified": "^10.1.0"
   },
-  "version": "20.13.1"
+  "version": "20.34.2"
 }

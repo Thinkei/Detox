@@ -4,7 +4,7 @@ const DEBUG = process.argv.includes('--reporters');
 const jestAllure2ReporterOptions = {
   testCase: {
     labels: {
-      package: ({ filePath }) => filePath.slice(1).join('/'),
+      package: ({ filePath }) => `unit.${filePath.slice(1, -1).join('.')}`,
       testMethod: ({ testCase }) => testCase.fullName,
       tag: ['unit'],
     },
@@ -74,7 +74,8 @@ module.exports = {
     'runners/jest/testEnvironment',
     'src/DetoxWorker.js',
     'src/logger/utils/streamUtils.js',
-    'src/realms'
+    'src/realms',
+    'src/copilot',
   ],
   resetMocks: true,
   resetModules: true,

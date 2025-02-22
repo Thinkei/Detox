@@ -42,7 +42,7 @@ class AndroidEmulator extends DeviceAllocatorFactory {
 }
 
 class AndroidAttached extends DeviceAllocatorFactory {
-  _createDriver({ detoxSession, detoxConfig }) {
+  _createDriver({ detoxSession }) {
     const serviceLocator = require('../../servicelocator/android');
     const adb = serviceLocator.adb;
     const DeviceRegistry = require('../../allocation/DeviceRegistry');
@@ -66,7 +66,7 @@ class Genycloud extends DeviceAllocatorFactory {
     const recipeService = new RecipesService(exec);
 
     const InstanceLifecycleService = require('../drivers/android/genycloud/services/GenyInstanceLifecycleService');
-    const instanceLifecycleService = new InstanceLifecycleService(exec);
+    const instanceLifecycleService = new InstanceLifecycleService(exec, adb);
 
     const RecipeQuerying = require('../drivers/android/genycloud/GenyRecipeQuerying');
     const recipeQuerying = new RecipeQuerying(recipeService);
